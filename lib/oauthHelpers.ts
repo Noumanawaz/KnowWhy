@@ -1,41 +1,83 @@
-import fs from 'fs';
-import path from 'path';
+import prisma from './prisma';
+import { encrypt, decrypt } from './crypto';
 
-const TOKEN_FILE = path.join(process.cwd(), '.tokens.json');
+// Replaces the old file-based storage
+// NOW: Stores securely in Postgres per user
 
-function getStore(): Record<string, string> {
-    if (!fs.existsSync(TOKEN_FILE)) return {};
-    try {
-        return JSON.parse(fs.readFileSync(TOKEN_FILE, 'utf-8'));
-    } catch { return {}; }
-}
+export async function storeToken(userId: string, provider: string, token: string, refreshToken?: string, expiresAt?: Date) {
+    const encryptedToken = encrypt(token);
+    const encryptedRefreshToken = refreshToken ? encrypt(refreshToken) : null;
 
-export function setToken(provider: string, token: string) {
-    const store = getStore();
-    store[provider] = token;
-    fs.writeFileSync(TOKEN_FILE, JSON.stringify(store, null, 2));
-}
-
-export function getToken(provider: string): string | undefined {
-    return getStore()[provider];
-}
-
-/**
- * Common OAuth exchange logic.
- */
-export async function exchangeCodeForToken(url: string, body: Record<string, string>) {
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/x-www-form-urlencoded',
+    // Upsert: Create or Update if exists for this user+provider
+    await prisma.integration.upsert({
+        where: {
+            userId_provider: {
+                userId,
+                provider
+            }
         },
-        body: new URLSearchParams(body).toString(),
+        update: {
+            accessToken: encryptedToken,
+            refreshToken: encryptedRefreshToken,
+            expiresAt: expiresAt || null
+        },
+        create: {
+            userId,
+            provider,
+            accessToken: encryptedToken,
+            refreshToken: encryptedRefreshToken,
+            expiresAt: expiresAt || null
+        }
+    });
+}
+
+export async function getToken(userId: string, provider: string): Promise<string | null> {
+    const integration = await prisma.integration.findUnique({
+        where: {
+            userId_provider: {
+                userId,
+                provider
+            }
+        }
     });
 
-    const data = await response.json();
-    if (!response.ok) {
-        throw new Error(data.error_description || data.error || 'OAuth exchange failed');
+    if (!integration) return null;
+    try {
+        return decrypt(integration.accessToken);
+    } catch (e) {
+        console.error(`Failed to decrypt token for user ${userId} provider ${provider}`, e);
+        return null;
     }
-    return data;
+}
+
+export async function getRefreshToken(userId: string, provider: string): Promise<string | null> {
+    const integration = await prisma.integration.findUnique({
+        where: {
+            userId_provider: {
+                userId,
+                provider
+            }
+        }
+    });
+
+    if (!integration || !integration.refreshToken) return null;
+    try {
+        return decrypt(integration.refreshToken);
+    } catch (e) {
+        return null;
+    }
+}
+
+// Helper to exchange code for token (remains mostly same, but returns object)
+export async function exchangeCodeForToken(url: string, body: any): Promise<any> {
+    const params = new URLSearchParams(body);
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json'
+        },
+        body: params
+    });
+    return res.json();
 }

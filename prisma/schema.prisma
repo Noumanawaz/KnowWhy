@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  extensions = [vector]
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  integrations Integration[]
+  documentChunks DocumentChunk[]
+}
+
+model Integration {
+  id           String   @id @default(uuid())
+  userId       String
+  provider     String   // "slack" | "github" | "notion"
+  accessToken  String   // Encrypted
+  refreshToken String?  // Encrypted
+  expiresAt    DateTime?
+  createdAt    DateTime @default(now())
+  
+  user         User     @relation(fields: [userId], references: [id])
+  
+  @@unique([userId, provider])
+}
+
+model DocumentChunk {
+  id        String   @id @default(uuid())
+  content   String
+  embedding Unsupported("vector(768)")?
+  metadata  Json?
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  createdAt DateTime @default(now())
+}

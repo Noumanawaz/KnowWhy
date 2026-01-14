@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parseDocument } from '@/lib/documentParser';
 import { chunkText } from '@/lib/textChunker';
-import { addChunksToIndex } from '@/lib/embeddingStore';
+import { addChunksToVectorStore } from '@/lib/embeddingStore';
 import genAI from '@/lib/geminiClient';
+import { getSession } from '@/lib/auth';
+
+import { ensureUserExists } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
     try {
+        const session = await getSession();
+        if (!session) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        // Ensure user exists in DB to prevent FK error
+        await ensureUserExists(session.id, session.email);
+
         const formData = await req.formData();
         const file = formData.get('file') as File;
 
@@ -31,11 +42,12 @@ export async function POST(req: NextRequest) {
                     documentName: file.name,
                     text,
                     embedding: result.embedding.values,
+                    userId: session.id
                 };
             })
         );
 
-        addChunksToIndex(chunksWithEmbeddings);
+        addChunksToVectorStore(chunksWithEmbeddings);
 
         return NextResponse.json({
             message: 'Document uploaded and indexed successfully (using Gemini)',

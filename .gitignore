@@ -39,3 +39,5 @@ next-env.d.ts
 
 # KnowWhy integration tokens
 .tokens.json
+
+/lib/generated/prisma

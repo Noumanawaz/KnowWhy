@@ -1,0 +1,24 @@
+
+--- 2026-01-12T16:44:21.055Z ---
+Auth Test: {"ok":true,"url":"https://exitech-workspace.slack.com/","team":"ExiTech","user":"knowwhy_mvp","team_id":"T088MBR27NU","user_id":"U0A7NDFQA6A","bot_id":"B0A791KTLLX","expires_in":41103,"is_enterprise_install":false,"response_metadata":{"scopes":["channels:history","channels:read","groups:read","users:read"]}}
+Channels Found: 2
+Channel Names: all-exitech, testing-chotu
+Response Metadata: {"next_cursor":"","scopes":["channels:history","channels:read","groups:read","users:read"],"acceptedScopes":["channels:read","groups:read","mpim:read","im:read","read"]}
+
+--- 2026-01-13T04:46:04.157Z ---
+Auth Test: {"ok":true,"url":"https://work-xof9437.slack.com/","team":"work","user":"knowwhy_mvp","team_id":"T089JNGECQJ","user_id":"U0A8AB8SB5F","bot_id":"B0A7R28LE75","expires_in":42937,"is_enterprise_install":false,"response_metadata":{"scopes":["channels:history","channels:read","groups:read","users:read","groups:history"]}}
+Channels Found: 3
+Channel Names: random, all-work, just-testing-for-now
+Response Metadata: {"next_cursor":"","scopes":["channels:history","channels:read","groups:read","users:read","groups:history"],"acceptedScopes":["channels:read","groups:read","mpim:read","im:read","read"]}
+
+--- 2026-01-13T13:13:54.673Z ---
+Auth Test: {"ok":true,"url":"https://work-xof9437.slack.com/","team":"work","user":"knowwhy_mvp","team_id":"T089JNGECQJ","user_id":"U0A8AB8SB5F","bot_id":"B0A7R28LE75","expires_in":12466,"is_enterprise_install":false,"response_metadata":{"scopes":["channels:history","channels:read","groups:read","users:read","groups:history"]}}
+Channels Found: 3
+Channel Names: random, all-work, just-testing-for-now
+Response Metadata: {"next_cursor":"","scopes":["channels:history","channels:read","groups:read","users:read","groups:history"],"acceptedScopes":["channels:read","groups:read","mpim:read","im:read","read"]}
+
+--- 2026-01-14T13:54:12.141Z ---
+Auth Test: {"ok":true,"url":"https://work-xof9437.slack.com/","team":"work","user":"knowwhy_mvp","team_id":"T089JNGECQJ","user_id":"U0A8AB8SB5F","bot_id":"B0A7R28LE75","expires_in":42866,"is_enterprise_install":false,"response_metadata":{"scopes":["channels:history","channels:read","groups:read","users:read","groups:history"]}}
+Channels Found: 3
+Channel Names: random, all-work, just-testing-for-now
+Response Metadata: {"next_cursor":"","scopes":["channels:history","channels:read","groups:read","users:read","groups:history"],"acceptedScopes":["channels:read","groups:read","mpim:read","im:read","read"]}

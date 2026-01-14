@@ -1,23 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import genAI from '@/lib/geminiClient';
-import { documentIndex } from '@/lib/embeddingStore';
-import { findRelevantChunks } from '@/lib/vectorSearch';
+import { querySimilarChunks } from '@/lib/embeddingStore';
 import { buildPrompt } from '@/lib/aiPromptBuilder';
+import { getSession } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
     try {
+        const session = await getSession();
+        if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
         const { question } = await req.json();
 
         if (!question) {
             return NextResponse.json({ error: 'Question is required' }, { status: 400 });
-        }
-
-        if (documentIndex.length === 0) {
-            return NextResponse.json({
-                error: 'No documents uploaded yet. Please upload a document first.'
-            }, { status: 400 });
         }
 
         // Embed the user question using Gemini
@@ -25,8 +22,18 @@ export async function POST(req: NextRequest) {
         const embedResult = await embedModel.embedContent(question);
         const queryEmbedding = embedResult.embedding.values;
 
-        // Retrieve relevant chunks
-        const context = findRelevantChunks(queryEmbedding, documentIndex);
+        // Retrieve relevant chunks from DB
+        const context = await querySimilarChunks(queryEmbedding, session.id);
+
+        if (context.length === 0) {
+            return NextResponse.json({
+                answer: "I don't have enough context to answer that yet.",
+                explanation: "No relevant documents found. Please sync some data first.",
+                sources: [],
+                confidence: 0,
+                gaps: ["Missing knowledge base data"]
+            });
+        }
 
         // Build prompt
         const prompt = buildPrompt(question, context);

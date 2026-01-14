@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readSlackChannel, readSlackUsers } from '@/lib/integrations/slackReader';
+import { readGithubRepo } from '@/lib/integrations/githubReader';
 import { chunkText } from '@/lib/textChunker';
 import { addChunksToVectorStore } from '@/lib/embeddingStore';
 import genAI from '@/lib/geminiClient';
@@ -14,35 +14,23 @@ export async function POST(req: NextRequest) {
         if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
         const { resourceId } = await req.json();
-        if (!resourceId) return NextResponse.json({ error: 'No channel selected' }, { status: 400 });
+        if (!resourceId) return NextResponse.json({ error: 'No repository selected' }, { status: 400 });
 
-        const token = await getToken(session.id, 'slack') || process.env.SLACK_BOT_TOKEN;
+        const token = await getToken(session.id, 'github') || process.env.GITHUB_TOKEN;
         if (!token) {
-            return NextResponse.json({ error: 'Slack not connected' }, { status: 401 });
+            return NextResponse.json({ error: 'GitHub not connected' }, { status: 401 });
         }
 
-        console.log(`Syncing Slack channel: ${resourceId}`);
-        const channelDocs = await readSlackChannel(resourceId, token);
+        console.log(`Syncing GitHub repo: ${resourceId}`);
+        // Extract owner and repo from resourceId (which might be "owner/repo" or just "repo")
+        // The frontend seems to send "owner/repo"
+        const [owner, repo] = resourceId.split('/');
 
-        console.log('Syncing Slack users...');
-        const userDocsString = await readSlackUsers(token);
-        // readSlackUsers returns a single string document now based on previous edit, or I should check that.
-        // Wait, looking at previous edit: readSlackUsers returns Promise<string>. 
-        // So I need to wrap it in a structure if common logic expects array. 
-        // Let's assume for now I treat it as one doc.
-
-        const userDoc = {
-            source: 'Slack Users',
-            sourceId: 'users',
-            title: 'Workspace Users',
-            content: userDocsString
-        };
-
-        const docs = [...channelDocs];
-        if (userDocsString) {
-            docs.push(userDoc as any);
+        if (!owner || !repo) {
+            return NextResponse.json({ error: 'Invalid repository format' }, { status: 400 });
         }
 
+        const docs = await readGithubRepo(owner, repo, token);
         const embedModel = genAI.getGenerativeModel({ model: 'text-embedding-004' });
 
         for (const doc of docs) {
@@ -57,15 +45,17 @@ export async function POST(req: NextRequest) {
                         text,
                         embedding,
                         userId: session.id,
-                        source: 'slack'
+                        source: 'github'
                     };
                 })
             );
+
             await addChunksToVectorStore(chunksWithEmbeddings);
         }
 
-        return NextResponse.json({ count: docs.length });
+        return NextResponse.json({ success: true, count: docs.length });
     } catch (error: any) {
+        console.error('GitHub Sync Error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
