@@ -22,7 +22,8 @@ export default function LoginPage() {
             const data = await res.json();
 
             if (res.ok) {
-                router.push('/');
+                // Force hard reload to ensure cookies are picked up
+                window.location.href = '/';
             } else {
                 setError(data.error || 'Login failed');
             }
