@@ -30,7 +30,7 @@ export async function setAuthCookie(token: string) {
     const cookieStore = await cookies();
     cookieStore.set(COOKIE_NAME, token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: false, // Changed to false to avoid issues with proxy/HTTP access on Coolify
         maxAge: 60 * 60 * 24 * 7, // 7 days
         path: '/',
         sameSite: 'lax',
