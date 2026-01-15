@@ -20,7 +20,7 @@ export function buildPrompt(question: string, context: { id: string; text: strin
     
     Return your response in EXACTLY this JSON format:
     {
-      "answer": "A clear, concise answer to the question.",
+      "answer": "A detailed and comprehensive answer to the question. Include specific examples, code snippets (if applicable), and nuances found in the text.",
       "explanation": "A deeper explanation of how the answer was derived from the sources.",
       "sources": ["Fine Tuning of Model", "AI Meeting Notes Demo", "Slack #general"],
       "confidence": 0.0 to 1.0 based on how well the context supports the answer,

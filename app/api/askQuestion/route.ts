@@ -22,8 +22,8 @@ export async function POST(req: NextRequest) {
         const embedResult = await embedModel.embedContent(question);
         const queryEmbedding = embedResult.embedding.values;
 
-        // Retrieve relevant chunks from DB
-        const context = await querySimilarChunks(queryEmbedding, session.id);
+        // Retrieve relevant chunks from DB (Increased to 15 chunks for better context)
+        const context = await querySimilarChunks(queryEmbedding, session.id, 0.45, 15);
 
         if (context.length === 0) {
             return NextResponse.json({
